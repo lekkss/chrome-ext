@@ -124,7 +124,7 @@ const SmartClipboard: React.FC = () => {
       <div className="relative mb-6">
         <input
           type="text"
-          placeholder="Search in clipboard..."
+          placeholder="Search in clipboard...."
           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
