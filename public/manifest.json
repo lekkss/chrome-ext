@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "React Chrome Extension",
+    "version": "1.0.0",
+    "description": "Extension Chrome",
+    "action": {
+        "default_popup": "index.html"
+    },
+    "permissions": [
+        "clipboardRead",
+        "clipboardWrite",
+        "storage"
+    ],
+    "host_permissions": [
+        "*://*/*"
+    ]
+}
