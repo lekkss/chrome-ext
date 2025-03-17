@@ -30,23 +30,6 @@ const SmartClipboard: React.FC = () => {
     };
   }, []);
 
-  // Modified handleCopy function
-  const handleCopy = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) {
-        // Send message to background script
-        chrome.runtime.sendMessage({
-          type: "UPDATE_CLIPBOARD",
-          text: text,
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Clipboard access is restricted. Try granting permissions.");
-    }
-  };
-
   // Modified handleClear function
   const handleClear = () => {
     chrome.storage.local.set({ clipboard: [] });
@@ -64,7 +47,7 @@ const SmartClipboard: React.FC = () => {
         <h2 className="text-2xl font-semibold text-gray-800">
           Clipboard History
         </h2>
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end">
           <button
             onClick={handleClear}
             className="flex items-center px-4 py-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -83,25 +66,6 @@ const SmartClipboard: React.FC = () => {
               />
             </svg>
             Clear All
-          </button>
-          <button
-            onClick={handleCopy}
-            className="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            Refresh
           </button>
         </div>
       </div>
