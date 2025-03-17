@@ -2,18 +2,38 @@
 
 console.log("Content script loaded"); // Debug log
 
-function handleCopyEvent() {
-  // Wait a bit for the clipboard to be updated
-  setTimeout(async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      console.log("Copied text:", text); // Debug log
-
-      if (text) {
-        chrome.runtime.sendMessage({
+function sendToBackground(text) {
+  try {
+    if (chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime
+        .sendMessage({
           type: "UPDATE_CLIPBOARD",
           text: text,
+        })
+        .catch((error) => {
+          // Handle any runtime errors silently
+          console.log("Failed to send message:", error);
         });
+    }
+  } catch (error) {
+    console.log("Runtime not available:", error);
+  }
+}
+
+function handleCopyEvent() {
+  setTimeout(async () => {
+    try {
+      // Try to get selected text first
+      const selectedText = window.getSelection()?.toString().trim();
+      if (selectedText) {
+        sendToBackground(selectedText);
+        return;
+      }
+
+      // Fallback to clipboard API
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        sendToBackground(text);
       }
     } catch (error) {
       console.error("Failed to read clipboard:", error);
@@ -22,15 +42,11 @@ function handleCopyEvent() {
 }
 
 // Listen for copy events
-document.addEventListener("copy", () => {
-  console.log("Copy event detected"); // Debug log
-  handleCopyEvent();
-});
+document.addEventListener("copy", handleCopyEvent);
 
-// Listen for keyboard shortcuts (Ctrl+C or Cmd+C)
+// Listen for keyboard shortcuts
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-    console.log("Keyboard copy detected"); // Debug log
     handleCopyEvent();
   }
 });

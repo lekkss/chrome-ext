@@ -1,8 +1,11 @@
-// background.js
-
-// Initialize badge count on installation
+// Initialize badge count on installation and startup
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Smart Clipboard Extension Installed");
+  updateBadgeCount();
+});
+
+// Also update badge when extension starts
+chrome.runtime.onStartup.addListener(() => {
   updateBadgeCount();
 });
 
@@ -10,41 +13,39 @@ chrome.runtime.onInstalled.addListener(() => {
 function updateBadgeCount() {
   chrome.storage.local.get(["clipboard"], (result) => {
     const count = result.clipboard?.length || 0;
+    console.log("Count:", count);
     chrome.action.setBadgeText({ text: count.toString() });
     chrome.action.setBadgeBackgroundColor({ color: "#4B5563" });
   });
 }
 
-// Listen for messages from content script
+// Handle messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("Message received:", message); // Debug log
-
-  if (message.type === "CONTENT_SCRIPT_LOADED") {
-    console.log("Content script loaded in tab:", sender.tab?.id);
-  }
-
   if (message.type === "UPDATE_CLIPBOARD") {
     chrome.storage.local.get(["clipboard"], (result) => {
       let clipboard = result.clipboard || [];
 
+      // Avoid duplicates
       if (!clipboard.some((item) => item.text === message.text)) {
         clipboard.unshift({
           text: message.text,
           timestamp: Date.now(),
         });
 
-        // Keep only the latest 50 items
-        clipboard = clipboard.slice(0, 50);
+        clipboard = clipboard.slice(0, 50); // Keep last 50 items
 
         chrome.storage.local.set({ clipboard }, () => {
-          console.log("Clipboard updated:", clipboard); // Debug log
-          // Update badge
-          chrome.action.setBadgeText({
-            text: clipboard.length.toString(),
-          });
+          updateBadgeCount();
+          // Send response to confirm update
+          sendResponse({ success: true });
         });
+      } else {
+        sendResponse({ success: true, duplicate: true });
       }
     });
+
+    // Return true to indicate we will send a response asynchronously
+    return true;
   }
 });
 
@@ -59,14 +60,14 @@ setInterval(() => {
 
       if (filtered.length !== result.clipboard.length) {
         chrome.storage.local.set({ clipboard: filtered }, () => {
-          updateBadgeCount();
+          updateBadgeCount(); // Use the helper function
         });
       }
     }
   });
 }, 60000);
 
-// Listen for storage changes to keep badge in sync
+// Update badge when storage changes
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "local" && changes.clipboard) {
     updateBadgeCount();
