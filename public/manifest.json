@@ -3,8 +3,19 @@
     "name": "React Chrome Extension",
     "version": "1.0.0",
     "description": "Extension Chrome",
+    "icons": {
+        "16": "icon/icon16.png",
+        "32": "icon/icon32.png"
+    },
     "action": {
-        "default_popup": "index.html"
+        "default_popup": "index.html",
+        "default_icon": {
+            "16": "icon/icon16.png",
+            "32": "icon/icon32.png"
+        }
+    },
+    "background": {
+        "service_worker": "background.js"
     },
     "permissions": [
         "clipboardRead",

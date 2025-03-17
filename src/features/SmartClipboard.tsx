@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 
 interface ClipboardItem {
@@ -9,56 +10,36 @@ const SmartClipboard: React.FC = () => {
   const [clipboard, setClipboard] = useState<ClipboardItem[]>([]);
   const [search, setSearch] = useState<string>("");
 
-  // Poll clipboard every 2 seconds
+  // Load from chrome storage on mount and listen for changes
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text && !clipboard.some((item) => item.text === text)) {
-          setClipboard((prevClipboard) => [
-            { text, timestamp: Date.now() },
-            ...prevClipboard,
-          ]);
-        }
-      } catch (error) {
-        console.error("Clipboard access error:", error);
+    chrome.storage.local.get(["clipboard"], (result) => {
+      if (result.clipboard) {
+        setClipboard(result.clipboard);
       }
-    }, 1000);
+    });
 
-    return () => clearInterval(interval);
-  }, [clipboard]);
+    const handleStorageChange = (changes: any) => {
+      if (changes.clipboard?.newValue) {
+        setClipboard(changes.clipboard.newValue);
+      }
+    };
 
-  // Load from local storage on mount
-  useEffect(() => {
-    const savedClipboard: ClipboardItem[] = JSON.parse(
-      localStorage.getItem("clipboard") || "[]"
-    );
-    setClipboard(savedClipboard);
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
-  // Save to local storage
-  useEffect(() => {
-    localStorage.setItem("clipboard", JSON.stringify(clipboard));
-  }, [clipboard]);
-
-  // Copy text to clipboard
+  // Modified handleCopy function
   const handleCopy = async () => {
     try {
-      if ("clipboard" in navigator) {
-        const text = await navigator.clipboard.readText();
-        if (text && !clipboard.some((item) => item.text === text)) {
-          setClipboard([{ text, timestamp: Date.now() }, ...clipboard]);
-        }
-      } else {
-        const textarea = document.createElement("textarea");
-        document.body.appendChild(textarea);
-        textarea.focus();
-        document.execCommand("paste");
-        const text = textarea.value;
-        document.body.removeChild(textarea);
-        if (text && !clipboard.some((item) => item.text === text)) {
-          setClipboard([{ text, timestamp: Date.now() }, ...clipboard]);
-        }
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        // Send message to background script
+        chrome.runtime.sendMessage({
+          type: "UPDATE_CLIPBOARD",
+          text: text,
+        });
       }
     } catch (error) {
       console.error(error);
@@ -66,14 +47,11 @@ const SmartClipboard: React.FC = () => {
     }
   };
 
-  // Auto-delete items after 24 hours (86400000 milliseconds)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const oneDayAgo = Date.now() - 86400000; // 24 hours in milliseconds
-      setClipboard((prev) => prev.filter((item) => item.timestamp > oneDayAgo));
-    }, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, []);
+  // Modified handleClear function
+  const handleClear = () => {
+    chrome.storage.local.set({ clipboard: [] });
+    chrome.action.setBadgeText({ text: "0" });
+  };
 
   // Filter clipboard history
   const filteredClipboard = clipboard.filter((item) =>
@@ -82,36 +60,57 @@ const SmartClipboard: React.FC = () => {
 
   return (
     <div className="p-6 min-w-[400px] bg-white rounded-xl shadow-lg">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col space-y-4 mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">
           Clipboard History
         </h2>
-        <button
-          onClick={handleCopy}
-          className="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
-        >
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={handleClear}
+            className="flex items-center px-4 py-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          Refresh
-        </button>
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Clear All
+          </button>
+          <button
+            onClick={handleCopy}
+            className="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="relative mb-6">
         <input
           type="text"
           placeholder="Search in clipboard..."
-          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
