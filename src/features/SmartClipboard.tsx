@@ -81,36 +81,118 @@ const SmartClipboard: React.FC = () => {
   );
 
   return (
-    <div className="p-4 min-w-[400px] mx-auto bg-gray-100 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Smart Clipboard Manager</h2>
-      <button
-        onClick={handleCopy}
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg mb-4"
-      >
-        Copy from Clipboard
-      </button>
-      <input
-        type="text"
-        placeholder="Search clipboard..."
-        className="w-full p-2 mb-4 border rounded"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <ul>
+    <div className="p-6 min-w-[400px] bg-white rounded-xl shadow-lg">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800">
+          Clipboard History
+        </h2>
+        <button
+          onClick={handleCopy}
+          className="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
+        >
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      <div className="relative mb-6">
+        <input
+          type="text"
+          placeholder="Search in clipboard..."
+          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <svg
+          className="absolute left-3 top-3.5 w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+      </div>
+
+      <div className="max-h-[400px] overflow-y-auto">
         {filteredClipboard.length > 0 ? (
-          filteredClipboard.map((item, index) => (
-            <li
-              key={index}
-              className="p-2 border-b cursor-pointer hover:bg-gray-200"
-              onClick={() => navigator.clipboard.writeText(item.text)}
-            >
-              {item.text}
-            </li>
-          ))
+          <ul className="space-y-2">
+            {filteredClipboard.map((item, index) => (
+              <li
+                key={index}
+                className="group relative p-4 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-all duration-200"
+                onClick={() => navigator.clipboard.writeText(item.text)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 pr-4">
+                    <p className="text-gray-700 break-all line-clamp-2">
+                      {item.text}
+                    </p>
+                    <span className="text-xs text-gray-400 mt-1">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      className="p-2 hover:bg-blue-100 rounded-full"
+                      title="Copy to clipboard"
+                    >
+                      <svg
+                        className="w-5 h-5 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+              </li>
+            ))}
+          </ul>
         ) : (
-          <p className="text-gray-500">No clipboard history</p>
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <svg
+              className="w-16 h-16 mb-4 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <p className="text-lg font-medium">No clipboard history</p>
+            <p className="text-sm">Copy some text to get started</p>
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 };
