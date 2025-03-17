@@ -41,6 +41,17 @@ const SmartClipboard: React.FC = () => {
     item.text.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Add this function inside your SmartClipboard component
+  const handleDeleteItem = (text: string) => {
+    chrome.storage.local.get(["clipboard"], (result) => {
+      const newClipboard = result.clipboard.filter(
+        (item: ClipboardItem) => item.text !== text
+      );
+      chrome.storage.local.set({ clipboard: newClipboard });
+      chrome.action.setBadgeText({ text: newClipboard.length.toString() });
+    });
+  };
+
   return (
     <div className="p-6 min-w-[400px] bg-white rounded-xl shadow-lg">
       <div className="flex flex-col space-y-4 mb-6">
@@ -99,11 +110,13 @@ const SmartClipboard: React.FC = () => {
             {filteredClipboard.map((item, index) => (
               <li
                 key={index}
-                className="group relative p-4 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-all duration-200"
-                onClick={() => navigator.clipboard.writeText(item.text)}
+                className="group relative p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200"
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex-1 pr-4">
+                  <div
+                    className="flex-1 pr-4 cursor-pointer"
+                    onClick={() => navigator.clipboard.writeText(item.text)}
+                  >
                     <p className="text-gray-700 break-all line-clamp-2">
                       {item.text}
                     </p>
@@ -111,10 +124,11 @@ const SmartClipboard: React.FC = () => {
                       {new Date(item.timestamp).toLocaleString()}
                     </span>
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
                       className="p-2 hover:bg-blue-100 rounded-full"
                       title="Copy to clipboard"
+                      onClick={() => navigator.clipboard.writeText(item.text)}
                     >
                       <svg
                         className="w-5 h-5 text-blue-500"
@@ -127,6 +141,28 @@ const SmartClipboard: React.FC = () => {
                           strokeLinejoin="round"
                           strokeWidth={2}
                           d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      className="p-2 hover:bg-red-100 rounded-full"
+                      title="Delete item"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteItem(item.text);
+                      }}
+                    >
+                      <svg
+                        className="w-5 h-5 text-red-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                         />
                       </svg>
                     </button>
